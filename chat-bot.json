@@ -1,0 +1,1169 @@
+{
+  "name": "chat bot",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1520,
+        1424
+      ],
+      "id": "5b72107d-87fe-40a2-a63e-58c0763622e8",
+      "name": "When chat message received",
+      "webhookId": "083e269d-91bf-4e8d-b79d-5f8574a254e8"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Call the knowledge tool to retrieve knowledge around users query and then answer\n\nUsers query: {{ $('Webhook').item.json.body.chatInput || $json.data }}",
+        "options": {
+          "systemMessage": "You are a website support agent for a Chosen Care Group.\n\nYour role is to assist users by providing accurate, helpful answers about the Care Group’s website, its services, contact options, and online resources.\n\nInstructions:\n\n- Use the knowledge provided by the tool to answer user questions.\n\n- Stay focused on topics related to the Care Group’s website or services (e.g., care programs, appointments, contact forms, careers, etc.).\n\n- If a user asks a question outside this scope (for example, about unrelated medical advice, other companies, or general topics), respond politely that you don’t know the answer.\n\n- Maintain a warm, compassionate, and professional tone at all times."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        1152
+      ],
+      "id": "439fb01f-ab54-4de1-8be9-1bfc95c6e217",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        2512
+      ],
+      "id": "6b5ce767-8407-42f0-ac6c-f82cacf74ed8",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        1392
+      ],
+      "id": "47f977d3-5af8-4a42-9e89-fa428cd80b0d",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "zg7oegaj2yFv5ykc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "sujitdhaugoda.dev@gmail.com",
+        "subject": "New support ticket",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -1568,
+        1872
+      ],
+      "id": "f7e32cf5-48de-4a2a-9741-44da1137d106",
+      "name": "Send Email",
+      "webhookId": "22f8a001-b288-4748-bac6-5b2876b2e8d2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -1312,
+        624
+      ],
+      "id": "375347ae-ad59-4848-a1dc-cbeab8f1cb22",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JjdzOltBxG6kPBte",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1568,
+        2304
+      ],
+      "id": "862a506b-9a0e-4ebb-8a7b-4f0bd371c92b",
+      "name": "Embeddings OpenAI",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.results[0].markdown.raw_markdown }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "url",
+                "value": "={{ $json.results[0].url }}"
+              },
+              {
+                "name": "links",
+                "value": "={{ $json.results[0].links.toJsonString() }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -1216,
+        848
+      ],
+      "id": "6a98d631-2ae2-423f-a368-dc41ad17c48c",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.1:11235/crawl",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n   \"urls\":[\n      \"https://chosencaregroup.com\"\n   ],\n   \"crawler_config\":{\n      \"type\":\"CrawlerRunConfig\",\n      \"params\":{\n         \"deep_crawl_strategy\":{\n            \"type\":\"BFSDeepCrawlStrategy\",\n            \"params\":{\n               \"max_depth\":2,\n               \"max_pages\":25\n            },\n            \"scraping_strategy\":{\n               \"type\":\"LXMLWebScrapingStrategy\",\n               \"params\":{\n                  \n               }\n            }\n         }\n      }\n   }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1568,
+        832
+      ],
+      "id": "6c90a4b2-0aa4-4bea-8a2a-fc2e8ee7947a",
+      "name": "crawl chosen care"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 300
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        1056
+      ],
+      "id": "9057533e-6733-4d00-b083-4a3acd84c6ca",
+      "name": "Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This node retrieves and provides relevant information from the Care Group company’s website knowledge base.\n\nThe knowledge base content has been created by scraping official website pages and storing them in a vector database for semantic search.\n\nWhen a user asks a question, this node:\n\n- Searches the vector database for the most relevant website content.\n- Returns the matched knowledge snippets to the support agent.\n- Enables the agent (ChatGPT) to respond accurately and contextually based on official information.\n\nIf no relevant information is found, the agent will respond politely that it does not know the answer and can only assist with Care Group–related website queries.\n\nPurpose:\n\n- To ensure all user responses are grounded in verified Care Group website content while maintaining accuracy, empathy, and professionalism.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        1392
+      ],
+      "id": "c4c0fb6f-f05b-4c4c-a7fe-58ac4b26d335",
+      "name": "Knowledge base",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JjdzOltBxG6kPBte",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        48,
+        1088
+      ],
+      "id": "5edee37a-fe6d-4464-b75f-b5ba5b4e73e3",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -1568,
+        2720
+      ],
+      "id": "021ecb98-968c-41be-ac5e-e77b1e82609a",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "75f9795e-cacd-4107-8a2b-104e69ea91c5",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "audio/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        272,
+        1232
+      ],
+      "id": "b5d3002f-05e8-4fcc-921c-aa3c75c34169",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $input.all().at(0)?.binary\nconst isfilesSent = typeof files === 'object' && Object.keys(files)?.length\n\nif(isfilesSent){\n  return { files }\n}\n\nreturn $input.all()"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        1232
+      ],
+      "id": "07630915-2475-4498-87c2-2d61e51af76e",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=files",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        1424
+      ],
+      "id": "29fc7bec-8ed3-4012-a1c0-8bd824685736",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "files.upload.data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        1088
+      ],
+      "id": "661908d7-257b-4423-89a8-a05cf0437f04",
+      "name": "Convert to Binary"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -1568,
+        2080
+      ],
+      "id": "b299d0aa-244e-4976-964a-e9f32dec13ad",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        1392
+      ],
+      "id": "ac5ef062-882c-4967-8347-ab4e4e9dbf9b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "38bPabljni4IDzWT",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        848
+      ],
+      "id": "4ee0d58f-c7ee-48d8-89f6-ca805d1d6f7b",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "1BghI9KHnhm0XHUq",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -848,
+        1152
+      ],
+      "id": "87d6bf65-00fe-4a49-9911-b182bdb36732",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -624,
+        1152
+      ],
+      "id": "4b644020-1977-46da-8913-40c7897a8efd",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7ee08bc3-07c9-4a49-8b77-b60b1811c3bf",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1568,
+        1232
+      ],
+      "id": "15c1a26e-eb28-4202-82b9-c86303fa6bcb",
+      "name": "Webhook",
+      "webhookId": "7ee08bc3-07c9-4a49-8b77-b60b1811c3bf"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ JSON.stringify($('AI Agent').item.json.output) }},\n  \"attachments\": [{ \"type\": \"data_url\", \"data\": \"data:{{ $json.files.data.mimeType }};base64,{{ $json.files.data.data }}\", \"mimeType\": \"{{ $json.files.data.mimeType }}\", \"autoPlayAudio\": true}]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1152
+      ],
+      "id": "bc66c160-e184-48e8-838f-33f5810cb767",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst files = $input.all().at(0)?.binary\nreturn {files};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        1152
+      ],
+      "id": "cd9ac052-4067-4f9f-b88f-34ab124f3877",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.4:8880/v1/audio/speech",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"kokoro\",\n  \"input\": {{ JSON.stringify($json.output) }},\n  \"voice\": \"af_heart\",\n  \"response_format\": \"mp3\",\n  \"speed\": 1\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        1152
+      ],
+      "id": "dac4cc5c-791e-4c72-a4ff-c0ac0eb174b3",
+      "name": "Generate TTS",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Set File ID').item.json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "id": "011c23b3-512c-457f-b532-eed8bba196f4",
+      "name": "Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -896,
+        192
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vYWkVUXDxNYh5ky4",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1iG8AHtg6gUt1WLOB1Fos5JUwY3OQI3us",
+          "mode": "list",
+          "cachedResultName": "Policy Document",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1iG8AHtg6gUt1WLOB1Fos5JUwY3OQI3us"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "id": "7bab1fe3-140c-42ce-abb5-29b6dc3b0fb7",
+      "name": "File Created",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        96
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "izvcmYad994qf2W6",
+          "name": "google oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1iG8AHtg6gUt1WLOB1Fos5JUwY3OQI3us",
+          "mode": "list",
+          "cachedResultName": "Policy Document",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1iG8AHtg6gUt1WLOB1Fos5JUwY3OQI3us"
+        },
+        "event": "fileUpdated",
+        "options": {}
+      },
+      "id": "16b29dc2-b441-4300-b945-e0e7abf7a1fe",
+      "name": "File Updated",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        288
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "izvcmYad994qf2W6",
+          "name": "google oauth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "documents",
+        "filterType": "string",
+        "filterString": "=metadata->>file_id=like.*{{ $json.file_id }}*"
+      },
+      "id": "6666ad17-7bd4-4bcb-ad8c-3365268c6f37",
+      "name": "Delete Old Doc Rows",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        192
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "JjdzOltBxG6kPBte",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10646eae-ae46-4327-a4dc-9987c2d76173",
+              "name": "file_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f4536df5-d0b1-4392-bf17-b8137fb31a44",
+              "name": "file_type",
+              "value": "={{ $json.mimeType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0b64147-28f3-4863-a7c9-aef5a89bcc33",
+      "name": "Set File ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "5d16ed4d-8423-411f-ac49-95be84426e69",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "8605b284-f3f6-4d2f-b554-9555966c08b6",
+      "name": "Insert into Supabase Vectorstore",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        256,
+        192
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "JjdzOltBxG6kPBte",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.data || $json.text || $json.concatenated_data }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "=file_id",
+                "value": "={{ $('Set File ID').first().json.file_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "c465e7c1-5718-4931-9b54-24c816616570",
+      "name": "Default Data Loader1",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        352,
+        416
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "42f844ea-6f88-446f-8495-0919b55dfdca",
+      "name": "Character Text Splitter1",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        432,
+        624
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [
+        208,
+        464
+      ],
+      "id": "d815fa83-74cb-4164-9f1f-250de3a297dd",
+      "name": "Embeddings Cohere1",
+      "credentials": {
+        "cohereApi": {
+          "id": "1BghI9KHnhm0XHUq",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This node retrieves information from the Care Group’s official Business Continuity Plan document, stored in a vector database.\n\nIt provides context and guidance related to operational continuity, emergency response procedures, data protection, and recovery strategies.\n\nUse Case:\n\n- To answer internal or authorized questions about the Care Group’s continuity planning, policies, or emergency response measures.\n\n- The support agent will use this node’s results only when the query clearly relates to the Business Continuity Plan.\n\nIf the question is unrelated or outside the scope of the BCP, the agent should respond that it does not have information on that topic.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        672
+      ],
+      "id": "041687dd-41e4-4863-936f-3189f0628a04",
+      "name": "Alcazar Court  Business Continuity Plan (BCP)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "JjdzOltBxG6kPBte",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.3:9000/asr",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "encode",
+              "value": "true"
+            },
+            {
+              "name": "task",
+              "value": "transcribe"
+            },
+            {
+              "name": "output",
+              "value": "text"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "audio_file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        1088
+      ],
+      "id": "d21be2a3-cc1a-4faf-90e9-ea37d1c3b5bb",
+      "name": "Transcribe audio",
+      "alwaysOutputData": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "crawl chosen care": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Binary": {
+      "main": [
+        [
+          {
+            "node": "Transcribe audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate TTS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Knowledge base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Convert to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate TTS": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Created": {
+      "main": [
+        [
+          {
+            "node": "Set File ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Updated": {
+      "main": [
+        [
+          {
+            "node": "Set File ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Doc Rows": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set File ID": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Doc Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Insert into Supabase Vectorstore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert into Supabase Vectorstore",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Character Text Splitter1": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader1",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert into Supabase Vectorstore",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Alcazar Court  Business Continuity Plan (BCP)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alcazar Court  Business Continuity Plan (BCP)": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "Transcribe audio": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9c4144fe-a40e-4081-b76d-7af56c3919c4",
+  "meta": {
+    "instanceId": "5b9ac76fbfb92e86bb2058a384d3b8cb96bb3540442a0714c1cc3f3660a0fe09"
+  },
+  "id": "1Ke2jxOqgmawzJ9Z",
+  "tags": []
+}

@@ -1,0 +1,83 @@
+<script type="module" defer>
+  import Chatbot from "https://cdn.n8nchatui.com/v1/embed.js";
+  Chatbot.init({
+    "n8nChatUrl": "http://host.docker.internal:5678/webhook/<your_webhook_url_id>",
+    "metadata": {}, // Include any custom data to send with each message to your n8n workflow
+    "theme": {
+      "button": {
+        "backgroundColor": "#005eb8",
+        "right": 20,
+        "bottom": 20,
+        "size": 50,
+        "iconColor": "#373434",
+        "customIconSrc": "https://chosencaregroup.com/wp-content/uploads/2018/10/ccg-new-logo-copy-1.jpg",
+        "customIconSize": 60,
+        "customIconBorderRadius": 15,
+        "autoWindowOpen": {
+          "autoOpen": true,
+          "openDelay": 2
+        },
+        "borderRadius": "circle"
+      },
+      "tooltip": {
+        "showTooltip": true,
+        "tooltipMessage": "Hello 👋 Need help?",
+        "tooltipBackgroundColor": "#005eb8",
+        "tooltipTextColor": "#ffffff",
+        "tooltipFontSize": 15
+      },
+      "chatWindow": {
+        "borderRadiusStyle": "rounded",
+        "avatarBorderRadius": 25,
+        "messageBorderRadius": 6,
+        "showTitle": true,
+        "title": "Chosen Care Group Chat Bot",
+        "titleAvatarSrc": "https://chosencaregroup.com/wp-content/uploads/2018/10/ccg-new-logo-copy-1.jpg",
+        "avatarSize": 40,
+        "welcomeMessage": "Hello! How can we help you?",
+        "errorMessage": "Please connect me to n8n first",
+        "backgroundColor": "#ffffff",
+        "height": 600,
+        "width": 400,
+        "fontSize": 16,
+        "starterPrompts": [
+          "What services do you provide?",
+          "How to contact?"
+        ],
+        "starterPromptFontSize": 14,
+        "renderHTML": true,
+        "clearChatOnReload": true,
+        "showScrollbar": false,
+        "botMessage": {
+          "backgroundColor": "#005eb8",
+          "textColor": "#fafafa",
+          "showAvatar": true,
+          "avatarSrc": "https://chosencaregroup.com/wp-content/uploads/2018/10/ccg-new-logo-copy-1.jpg",
+          "showCopyToClipboardIcon": false
+        },
+        "userMessage": {
+          "backgroundColor": "#fff6f3",
+          "textColor": "#050505",
+          "showAvatar": true,
+          "avatarSrc": "https://www.svgrepo.com/show/532363/user-alt-1.svg"
+        },
+        "textInput": {
+          "placeholder": "Type your query",
+          "backgroundColor": "#ffffff",
+          "textColor": "#1e1e1f",
+          "sendButtonColor": "#f36539",
+          "maxChars": 50,
+          "maxCharsWarningMessage": "You exceeded the characters limit. Please input less than 50 characters.",
+          "autoFocus": false,
+          "borderRadius": 6,
+          "sendButtonBorderRadius": 50
+        },
+        "voiceInputConfig": {
+          "enabled": true,
+          "maxRecordingTime": 10,
+          "recordingNotSupportedMessage": "To record audio, use modern browsers like Chrome or Firefox that support audio recording"
+        }
+      },
+    }
+  });
+</script>

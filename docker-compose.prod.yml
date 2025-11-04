@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n-service
+    restart: always
+    ports:
+      - 5678:5678
+    environment:
+      - N8N_HOST=${SUBDOMAIN}.${DOMAIN}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ${DATA_FOLDER}/local_files:/files
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:18
+    container_name: postgres-service
+    ports:
+      - '5432:5432'
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - n8n_db:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  crawl4ai:
+    image: unclecode/crawl4ai:latest
+    container_name: crawl4ai
+    ports:
+      - '11235:11235'
+    environment:
+      - CRAWL4AI_API_TOKEN=${CRAWL4AI_API_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MAX_CONCURRENT_TASKS=2
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - backend
+    restart: always
+
+  kokoro-fastapi-cpu:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu
+    container_name: kokoro-service
+    ports:
+      - 8880:8880
+    restart: always
+    networks:
+      - backend   
+
+  whisper-asr-webservice:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: whisper-service
+    environment:
+      - ASR_MODEL=base
+      - ASR_ENGINE=openai_whisper
+    ports:
+      - 9000:9000
+    volumes:
+      - cache-whisper:/root/.cache
+    networks:
+      - backend
+    restart: always
+      
+volumes:
+  n8n_data:
+    external: true
+  n8n_db:
+    external: true
+  cache-whisper:
+    external: true
+
+networks:
+  backend:
+    driver: bridge
