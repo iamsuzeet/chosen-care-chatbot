@@ -20,20 +20,23 @@ services:
     networks:
       - backend
     depends_on:
-      - postgres
+      - mongodb
 
-  postgres:
-    image: postgres:18
-    container_name: postgres-service
-    ports:
-      - '5432:5432'
+  mongodb:
+    image: mongodb/mongodb-atlas-local
+    hostname: mongodb
+    container_name: mongodb
     restart: unless-stopped
+    ports:
+      - 27017:27017
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATA: /var/lib/postgresql/data
+      - MONGODB_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGODB_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     volumes:
-      - n8n_db:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+      - n8n_db:/data/db
+      - configdb:/data/configdb
+      - mongot:/data/mongot
     networks:
       - backend
 
@@ -82,6 +85,10 @@ volumes:
   n8n_db:
     external: true
   cache-whisper:
+    external: true
+  configdb:
+    external: true
+  mongot:
     external: true
 
 networks:
