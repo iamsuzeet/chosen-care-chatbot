@@ -112,15 +112,15 @@ mongosh "mongodb://root:<password>@<MONGODB_IP_ADDRESS>:27017"
 2. Create collections 
 
     ```bash
-    use n8n_chat_histories
+    db.createCollection("n8n_chat_histories")
     ```
 
     ```bash
-    use website_knowledge_base
+    db.createCollection("website_knowledge_base")
     ```
 
     ```bash
-    use documents_knowledge_base
+    db.createCollection("documents_knowledge_base")
     ```
 
 3. Create the vector search index
